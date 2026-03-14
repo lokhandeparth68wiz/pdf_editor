@@ -33,7 +33,8 @@ export async function POST(request: NextRequest) {
         const command = `${gsCommand} -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 -dPDFSETTINGS=/${level} -dNOPAUSE -dQUIET -dBATCH -sOutputFile="${outputPath}" "${inputPath}"`;
         exec(command, (error, stdout, stderr) => {
           if (error) {
-            console.error(`Ghostscript error: ${error}`);
+            console.error(`Ghostscript error:`, error);
+            console.error(`Ghostscript stderr:`, stderr);
             reject(new Error("Ghostscript is not installed or failed to compress. Ensure Ghostscript is installed and in your PATH."));
           } else {
             resolve();

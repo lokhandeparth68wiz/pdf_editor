@@ -28,19 +28,17 @@ export async function POST(request: NextRequest) {
     await fs.writeFile(inputPath, buffer);
 
     // Call LibreOffice headless to convert
-    // Depending on the OS, the command is soffice. On windows, it's often soffice.exe
-    const loCommand = process.platform === "win32" ? "soffice" : "soffice";
+    const loCommand = process.platform === "win32" ? "soffice" : "libreoffice";
 
     const convertFile = () =>
       new Promise<string>((resolve, reject) => {
-        // e.g. "soffice --headless --convert-to pdf --outdir /tmp /tmp/input.docx"
         const command = `"${loCommand}" --headless --convert-to ${targetFormat} --outdir "${outdir}" "${inputPath}"`;
-        exec(command, (error, stdout, stderr) => {
+        exec(command, { env: { ...process.env, HOME: os.tmpdir() } }, (error, stdout, stderr) => {
           if (error) {
-             console.error(`LibreOffice error: ${error}`);
+             console.error(`LibreOffice error:`, error);
+             console.error(`LibreOffice stderr:`, stderr);
              reject(new Error("LibreOffice conversion failed. Ensure it is installed and in PATH."));
           } else {
-             // soffice changes the extension
              const parsedInput = path.parse(inputPath);
              const outputPath = path.join(outdir, `${parsedInput.name}.${targetFormat}`);
              resolve(outputPath);
