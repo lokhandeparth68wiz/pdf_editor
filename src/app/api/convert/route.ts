@@ -32,8 +32,14 @@ export async function POST(request: NextRequest) {
 
     const convertFile = () =>
       new Promise<string>((resolve, reject) => {
-        const command = `"${loCommand}" --headless --convert-to ${targetFormat} --outdir "${outdir}" "${inputPath}"`;
-        exec(command, { env: { ...process.env, HOME: os.tmpdir() } }, (error, stdout, stderr) => {
+        let command = `"${loCommand}" --headless --convert-to ${targetFormat} --outdir "${outdir}" "${inputPath}"`;
+        
+        // Force PDF files to open in Writer instead of Draw so they can be exported to DOCX
+        if (ext.toLowerCase() === ".pdf" && targetFormat === "docx") {
+          command = `"${loCommand}" --headless --infilter="writer_pdf_import" --convert-to docx --outdir "${outdir}" "${inputPath}"`;
+        }
+
+        exec(command, { env: { ...process.env, HOME: os.tmpdir() } }, async (error, stdout, stderr) => {
           if (error) {
              console.error(`LibreOffice error:`, error);
              console.error(`LibreOffice stderr:`, stderr);
@@ -41,7 +47,17 @@ export async function POST(request: NextRequest) {
           } else {
              const parsedInput = path.parse(inputPath);
              const outputPath = path.join(outdir, `${parsedInput.name}.${targetFormat}`);
-             resolve(outputPath);
+             
+             try {
+                // Verify LibreOffice actually created the output file
+                await fs.access(outputPath);
+                resolve(outputPath);
+             } catch (e) {
+                console.error("LibreOffice succeeded but output file is missing.");
+                console.error("stdout:", stdout);
+                console.error("stderr:", stderr);
+                reject(new Error(`LibreOffice failed to generate ${targetFormat}. Log: ${stdout} ${stderr}`));
+             }
           }
         });
       });
