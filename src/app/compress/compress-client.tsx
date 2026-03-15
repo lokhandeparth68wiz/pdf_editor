@@ -26,7 +26,7 @@ export default function CompressClient() {
       formData.append("file", file);
       formData.append("level", level);
 
-      const response = await fetch("/api/compress", {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/compress`, {
         method: "POST",
         body: formData,
       });

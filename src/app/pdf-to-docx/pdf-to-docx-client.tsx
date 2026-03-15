@@ -23,7 +23,7 @@ export default function PdfToDocxClient() {
       formData.append("file", file);
       formData.append("targetFormat", "docx");
 
-      const response = await fetch("/api/convert", {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api/convert`, {
         method: "POST",
         body: formData,
       });
